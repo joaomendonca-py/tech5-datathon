@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    image: passos-magicos-ml:latest
+    container_name: passos-magicos-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./monitoring/reports:/app/monitoring/reports
+      - ./app/model:/app/app/model
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  monitoring:
+    build: .
+    image: passos-magicos-ml:latest
+    container_name: passos-magicos-monitoring
+    command: streamlit run monitoring/dashboard.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./monitoring/reports:/app/monitoring/reports
+      - ./data:/app/data
+    env_file:
+      - .env
+    depends_on:
+      - api
+    restart: unless-stopped

@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables (secrets)
+.env
+!.env.example
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data — ficam locais (dados sensíveis de alunos)
+data/raw/
+data/processed/
+
+# Model artifacts (pesados — usar Git LFS ou S3)
+app/model/model.joblib
+
+# Logs
+logs/
+*.log
+
+# Monitoring reports
+monitoring/reports/
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Optuna
+optuna.db
