@@ -18,6 +18,7 @@ import pandas as pd
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
+from src.feature_engineering import run_feature_engineering
 from src.utils import Config, get_logger
 
 logger = get_logger(__name__)
@@ -110,6 +111,17 @@ def _predict_single(features: StudentFeatures, model_store: dict) -> PredictionR
     input_dict = features.model_dump()
     df = pd.DataFrame([input_dict])
 
+    # Add columns expected by feature engineering that may not be in the API schema
+    if "ANO" not in df.columns:
+        df["ANO"] = 2024  # current year as default
+    if "PONTO_VIRADA" not in df.columns:
+        df["PONTO_VIRADA"] = 0  # conservative default
+    if "ANOS_PM" not in df.columns:
+        df["ANOS_PM"] = 1  # first year as default
+
+    # Run the same feature engineering used during training
+    df = run_feature_engineering(df)
+
     # Apply the same OneHotEncoder used during training (stored in artifacts)
     onehot_encoder = artifacts.get("encoders", {}).get("onehot")
     if onehot_encoder is not None:
@@ -128,12 +140,24 @@ def _predict_single(features: StudentFeatures, model_store: dict) -> PredictionR
         for col in cat_cols:
             df[col] = pd.Categorical(df[col]).codes
 
+    # Apply the same scaler used during training (only on the columns it knows)
+    scaler = artifacts.get("scaler")
+    if scaler is not None:
+        scaler_cols = list(getattr(scaler, "feature_names_in_", []))
+        if scaler_cols:
+            # Align to scaler columns, fill missing with 0
+            df_scale = df.reindex(columns=scaler_cols, fill_value=0)
+            scaled = scaler.transform(df_scale)
+            df_scaled = pd.DataFrame(scaled, columns=scaler_cols, index=df.index)
+            # Re-add any columns not seen by the scaler (e.g. ANO)
+            for col in df.columns:
+                if col not in df_scaled.columns:
+                    df_scaled[col] = df[col]
+            df = df_scaled
+
     # Align to the exact feature set the model was trained on
     feature_names = model_store["metadata"].get("feature_names", [])
     if feature_names:
-        for col in feature_names:
-            if col not in df.columns:
-                df[col] = 0
         df = df.reindex(columns=feature_names, fill_value=0)
 
     proba = float(model.predict_proba(df)[0][1])
