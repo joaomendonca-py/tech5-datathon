@@ -11,7 +11,7 @@ Este relatório apresenta a solução desenvolvida para o **Datathon Pós Tech F
 
 **Solução:** Pipeline completa de Machine Learning em produção — desde a ingestão dos dados brutos do PEDE (Pesquisa Extensiva do Desenvolvimento Educacional) até uma API REST containerizada, com monitoramento contínuo de drift e cobertura de testes unitários superior a 80%.
 
-**Resultado do modelo:** **Recall de 100%** no conjunto de teste — nenhum aluno em risco deixou de ser identificado.
+**Resultado do modelo:** **Recall de 98,66%** no conjunto de teste — altíssima sensibilidade na identificação de alunos em risco, com AUC-ROC de 0,9346.
 
 ---
 
@@ -205,15 +205,15 @@ A variável `RISCO_DEFASAGEM` é binária (0 = sem risco, 1 = em risco) e constr
 
 | Hiperparâmetro | Valor Otimizado |
 |---|---|
-| `n_estimators` | 51 |
-| `max_depth` | 10 |
-| `learning_rate` | 0.01039 |
-| `subsample` | 0.9288 |
-| `colsample_bytree` | 0.6491 |
-| `reg_alpha` | 0.6134 |
-| `reg_lambda` | 0.0007 |
+| `n_estimators` | 57 |
+| `max_depth` | 6 |
+| `learning_rate` | 0.01482 |
+| `subsample` | 0.9949 |
+| `colsample_bytree` | 0.6302 |
+| `reg_alpha` | 0.00509 |
+| `reg_lambda` | 0.000162 |
 
-**CV Recall após otimização: 0.9933**
+**CV Recall após otimização: 0.9645**
 
 ---
 
@@ -223,37 +223,38 @@ A variável `RISCO_DEFASAGEM` é binária (0 = sem risco, 1 = em risco) e constr
 
 | Métrica | Validação | Teste |
 |---|---|---|
-| **Recall** | **0.9911** | **1.0000** |
-| AUC-ROC | 0.9408 | 0.9299 |
-| F1-Score | 0.9367 | 0.9275 |
-| Accuracy | 0.9026 | 0.8864 |
-| Precision | 0.8880 | 0.8649 |
+| **Recall** | **0.9911** | **0.9866** |
+| AUC-ROC | 0.9454 | 0.9346 |
+| F1-Score | 0.9569 | 0.9424 |
+| Accuracy | 0.9351 | 0.9123 |
+| Precision | 0.9250 | 0.9020 |
 
-### 5.2 Interpretation do Recall = 1.00
+### 5.2 Interpretação do Recall = 0.9866
 
 - **224 alunos** realmente em risco no conjunto de teste
-- **224 identificados corretamente** pelo modelo (0 Falsos Negativos)
-- **35 falsos positivos** (alunos sinalizados sem risco real — custo aceitável)
+- **221 identificados corretamente** pelo modelo (apenas 3 Falsos Negativos)
+- **24 falsos positivos** (alunos sinalizados sem risco real — custo aceitável)
+- Threshold padrão: **0.5** — ajustável conforme critério pedagógico
 
 ### 5.3 Relatório de Classificação (Teste)
 
 ```
                 precision    recall  f1-score   support
 
-   Sem Risco       1.00      0.58      0.74        84
-    Em Risco       0.86      1.00      0.93       224
+   Sem Risco       0.93      0.74      0.82        84
+    Em Risco       0.90      0.99      0.94       224
 
-    accuracy                           0.89       308
-   macro avg       0.93      0.79      0.83       308
-weighted avg       0.90      0.89      0.88       308
+    accuracy                           0.91       308
+   macro avg       0.92      0.86      0.88       308
+weighted avg       0.91      0.91      0.91       308
 ```
 
 ### 5.4 Confiabilidade para Produção
 
 O modelo é considerado **confiável para produção** pelos seguintes critérios:
 
-1. **Recall = 100%** no teste: nenhum aluno em risco é "perdido"
-2. **AUC-ROC = 0.93**: excelente capacidade discriminativa em todos os thresholds
+1. **Recall = 98,66%** no teste: menos de 2% dos alunos em risco não identificados
+2. **AUC-ROC = 0.9346**: excelente capacidade discriminativa em todos os thresholds
 3. **Validação estratificada (k=5)**: robustez comprovada em múltiplos splits
 4. **Optuna com 50 trials**: otimização sistemática, não empírica
 5. **Hold-out nunca visto**: avaliação isenta de contaminação
@@ -283,6 +284,8 @@ curl -X POST http://localhost:8000/predict \
     "IDADE": 14,
     "FASE": "F6",
     "PEDRA": "Quartzo",
+    "GENERO": "MENINO",
+    "INSTITUICAO": "ESCOLA PÚBLICA",
     "IAA": 4.5,
     "IEG": 3.8,
     "IPS": 5.0,
@@ -510,16 +513,18 @@ streamlit run monitoring/dashboard.py
 | Dataset unificado | 3.135 registros (2020–2024) |
 | Alunos em risco identificados | 1.489 (72,7% da amostra limpa) |
 | Modelo selecionado | XGBoost (otimizado com Optuna) |
-| **Recall no teste** | **100%** — zero alunos em risco não identificados |
-| AUC-ROC | 0.93 |
+| **Recall no teste** | **98,66%** — 221 de 224 alunos em risco identificados |
+| AUC-ROC | 0.9346 |
+| F1-Score | 0.9424 |
 | Testes unitários | 97 testes, 0 falhas |
 | Cobertura de código | ≥ 80% |
-| API em produção | FastAPI + Docker |
+| API em produção | FastAPI + Uvicorn (Docker-ready) |
 | Monitoramento ativo | PSI + KS + Evidently + Streamlit |
+| Repositório | github.com/joaomendonca-py/tech5-datathon |
 
 ### 11.2 Impacto para a Associação Passos Mágicos
 
-- **Todos os alunos em risco são identificados** (Recall = 1.0), garantindo que nenhuma criança seja deixada sem suporte
+- **98,66% dos alunos em risco são identificados** (Recall = 0.9866), garantindo que quase nenhuma criança seja deixada sem suporte
 - **Predição preventiva:** a equipe pedagógica pode agir antes que a defasagem se agrave
 - **Escalabilidade:** a API processa até 1.000 predições por requisição, compatível com operações em escala da associação
 - **Rastreabilidade:** logs estruturados e dashboard de monitoramento garantem visibilidade contínua do comportamento do modelo
