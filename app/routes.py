@@ -32,21 +32,24 @@ router = APIRouter()
 class StudentFeatures(BaseModel):
     """Input features for a single student's risk prediction."""
 
-    IDADE: float = Field(..., ge=5, le=25, description="Idade do estudante (anos)", example=14)
-    FASE: str = Field(..., description="Fase atual do aluno (ex: F1 a F8)", example="F6")
-    PEDRA: str = Field(..., description="Categoria de desempenho (Quartzo, Ágata, Ametista, Topázio)", example="Ametista")
-    IAA: float = Field(..., ge=0, le=10, description="Indicador de Autoavaliação do Aluno", example=7.5)
-    IEG: float = Field(..., ge=0, le=10, description="Indicador de Engajamento", example=6.8)
-    IPS: float = Field(..., ge=0, le=10, description="Indicador Psicossocial", example=8.0)
-    IDA: float = Field(..., ge=0, le=10, description="Indicador de Aprendizagem", example=7.2)
-    IPP: float = Field(..., ge=0, le=10, description="Indicador de Ponto de Partida (Pedagógico)", example=6.5)
-    IPV: float = Field(..., ge=0, le=10, description="Indicador de Ponto de Virada", example=7.0)
-    IAN: float = Field(..., ge=0, le=10, description="Indicador de Adequação ao Nível", example=6.9)
-    INDE: float = Field(..., ge=0, le=10, description="Índice de Desenvolvimento Educacional", example=7.1)
+    IDADE: float = Field(..., ge=5, le=25, description="Idade do estudante (anos)")
+    FASE: str = Field(..., description="Fase atual do aluno (ex: F1 a F8)")
+    PEDRA: str = Field(..., description="Categoria de desempenho (Quartzo, Ágata, Ametista, Topázio)")
+    GENERO: str = Field(default="MENINA", description="Gênero do aluno (MENINO ou MENINA)")
+    INSTITUICAO: str = Field(default="ESCOLA PÚBLICA", description="Instituição de ensino do aluno")
+    IAA: float = Field(..., ge=0, le=10, description="Indicador de Autoavaliação do Aluno")
+    IEG: float = Field(..., ge=0, le=10, description="Indicador de Engajamento")
+    IPS: float = Field(..., ge=0, le=10, description="Indicador Psicossocial")
+    IDA: float = Field(..., ge=0, le=10, description="Indicador de Aprendizagem")
+    IPP: float = Field(..., ge=0, le=10, description="Indicador de Ponto de Partida (Pedagógico)")
+    IPV: float = Field(..., ge=0, le=10, description="Indicador de Ponto de Virada")
+    IAN: float = Field(..., ge=0, le=10, description="Indicador de Adequação ao Nível")
+    INDE: float = Field(..., ge=0, le=10, description="Índice de Desenvolvimento Educacional")
 
     model_config = {"json_schema_extra": {
         "example": {
             "IDADE": 14, "FASE": "F6", "PEDRA": "Ametista",
+            "GENERO": "MENINA", "INSTITUICAO": "ESCOLA PÚBLICA",
             "IAA": 7.5, "IEG": 6.8, "IPS": 8.0, "IDA": 7.2,
             "IPP": 6.5, "IPV": 7.0, "IAN": 6.9, "INDE": 7.1,
         }

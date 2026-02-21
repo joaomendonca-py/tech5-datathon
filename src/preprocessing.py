@@ -334,9 +334,29 @@ def encode_categoricals(
     encoders: dict = {}
 
     if strategy == "onehot":
-        enc = OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop="first")
+        # Define all known categories explicitly to avoid vocabulary gaps between splits
+        KNOWN_CATEGORIES = {
+            "PEDRA": ["Ametista", "Desconhecido", "Quartzo", "Topázio", "Ágata"],
+            "FASE": ["F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"],
+            "GENERO": ["MENINA", "MENINO"],
+            "INSTITUICAO": [
+                "ESCOLA JP II", "ESCOLA JOÃO PAULO II", "ESCOLA PÚBLICA",
+                "REDE DECISÃO", "REDE DECISÃO/UNIÃO", "EINSTEIN",
+                "ESTÁCIO", "UNISA", "FIAP",
+            ],
+        }
         existing_cols = [c for c in cols if c in df.columns]
         if existing_cols:
+            categories = [KNOWN_CATEGORIES.get(c, "auto") for c in existing_cols]
+            # If any col has no known mapping, fall back to "auto"
+            if any(c == "auto" for c in categories):
+                categories = "auto"
+            enc = OneHotEncoder(
+                sparse_output=False,
+                handle_unknown="ignore",
+                drop="first",
+                categories=categories,
+            )
             encoded = enc.fit_transform(df[existing_cols].astype(str))
             feat_names = enc.get_feature_names_out(existing_cols)
             df = df.drop(columns=existing_cols)
